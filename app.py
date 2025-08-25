@@ -28,7 +28,9 @@ current_index = 0
 def screen():
     global current_index
     question = quiz_questions[current_index]
-    return render_template('screen.html', question=question)
+    labels = ['A', 'B', 'C', 'D']
+    return render_template('screen.html', question=question, labels=labels)
+
 @app.route('/next')
 def next_question():
     global current_index

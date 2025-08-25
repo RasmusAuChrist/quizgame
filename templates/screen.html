@@ -1,11 +1,31 @@
-<h1>{{ question["question"] }}</h1>
-<ul>
-  {% for choice in question["choices"] %}
-    <li>{{ ('A' | ord) + loop.index0 | chr }}) {{ choice }}</li>
-  {% endfor %}
-</ul>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quiz Screen</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>{{ question["question"] }}</h1>
+  <ul>
+    {% for choice in question["choices"] %}
+      <li>{{ labels[loop.index0] }}) {{ choice }}</li>
+    {% endfor %}
+  </ul>
 
-<a href="/next">Next Question</a>
-<br><br>
-<img src="https://api.qrserver.com/v1/create-qr-code/?data=https://quizgame-4em0.onrender.com/phone&size=200x200" alt="Scan to play" />
-<p>Scan this QR code to answer</p>
+  <p>
+    <a href="/next">Next Question</a>
+  </p>
+
+  <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://quizgame-4em0.onrender.com/phone&size=200x200" alt="Scan to play" />
+  <p>Scan this QR code to answer</p>
+
+  <div id="answerDisplay" style="font-size: 1.5rem; margin-top: 1rem;"></div>
+
+  <script>
+    const socket = io();
+    socket.on('new_answer', (data) => {
+      document.getElementById('answerDisplay').textContent = `Answer received: ${data.answer}`;
+    });
+  </script>
+</body>
+</html>
