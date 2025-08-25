@@ -1,7 +1,7 @@
 <h1>{{ question["question"] }}</h1>
 <ul>
-  {% for i, choice in enumerate(question["choices"]) %}
-    <li>{{ chr(65 + i) }}) {{ choice }}</li>
+  {% for choice in question["choices"] %}
+    <li>{{ ('A' | ord) + loop.index0 | chr }}) {{ choice }}</li>
   {% endfor %}
 </ul>
 
