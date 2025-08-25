@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quiz Screen</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Waiting for answer...</h1>
+  <div id="answer"></div>
+
+  <script>
+    const socket = io();
+    socket.on('new_answer', (data) => {
+      document.getElementById('answer').innerText = "Answer: " + data.answer;
+    });
+  </script>
+</body>
+</html>
+py
