@@ -4,18 +4,33 @@
   <title>Phone Controller</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
-<body>
-  <h1>Answer the question:</h1>
-  <button onclick="sendAnswer('A')">A</button>
-  <button onclick="sendAnswer('B')">B</button>
-  <button onclick="sendAnswer('C')">C</button>
-  <button onclick="sendAnswer('D')">D</button>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    padding: 2rem;
+  }
+  button {
+    font-size: 2rem;
+    width: 80%;
+    margin: 1rem auto;
+    padding: 1rem;
+    display: block;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+</style>
 
-  <script>
-    const socket = io();
-    function sendAnswer(ans) {
-      socket.emit('submit_answer', { answer: ans });
-    }
-  </script>
-</body>
+<h1>Select Your Answer:</h1>
+<button onclick="sendAnswer('A')">A</button>
+<button onclick="sendAnswer('B')">B</button>
+<button onclick="sendAnswer('C')">C</button>
+<button onclick="sendAnswer('D')">D</button>
+
 </html>

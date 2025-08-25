@@ -1,21 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Quiz Screen</title>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-</head>
-<body>
-  <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://quizgame-4em0.onrender.com/phone&size=200x200" alt="Scan to play" />
-<p>Scan this QR code to use your phone as a controller</p>
+<h1>{{ question["question"] }}</h1>
+<ul>
+  {% for i, choice in enumerate(question["choices"]) %}
+    <li>{{ chr(65 + i) }}) {{ choice }}</li>
+  {% endfor %}
+</ul>
 
-  <h1>Waiting for answer...</h1>
-  <div id="answer"></div>
-
-  <script>
-    const socket = io();
-    socket.on('new_answer', (data) => {
-      document.getElementById('answer').innerText = "Answer: " + data.answer;
-    });
-  </script>
-</body>
-</html>
+<a href="/next">Next Question</a>
+<br><br>
+<img src="https://api.qrserver.com/v1/create-qr-code/?data=https://quizgame-4em0.onrender.com/phone&size=200x200" alt="Scan to play" />
+<p>Scan this QR code to answer</p>
