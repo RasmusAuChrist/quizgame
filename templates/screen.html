@@ -1,87 +1,73 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Quiz Phone Controller</title>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 2rem;
-    }
-    input, button {
-      font-size: 1.5rem;
-      padding: 0.75rem;
-      margin: 1rem auto;
-      width: 80%;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-  </style>
-</head>
 <body>
-  <h1 id="title">Enter your name to start</h1>
-  <input id="nameInput" placeholder="Your name" />
-  <button onclick="startGame()">Start</button>
+  <h1 id="player">🎮 Ready to play?</h1>
 
-  <div id="buttons" style="display:none;">
-    <button onclick="sendAnswer(0)">A</button>
-    <button onclick="sendAnswer(1)">B</button>
-    <button onclick="sendAnswer(2)">C</button>
-    <button onclick="sendAnswer(3)">D</button>
+  <div id="qr">
+    <p>Scan this QR code to join</p>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://quizgame-4em0.onrender.com/phone&size=200x200" />
   </div>
+
+  <div id="questionBox" style="display:none;">
+    <h2 id="questionText"></h2>
+    <div id="choices"></div>
+    <div id="timer">Score: 100</div>
+  </div>
+
+  <div id="leaderboard" style="display:none;"></div>
 
   <script>
     const socket = io();
-    let currentScore = 0;
-    let countdown;
-    let timeRemaining = 100;
+    let timerInterval;
+    let scoreLeft = 100;
 
-    function startGame() {
-      const name = document.getElementById("nameInput").value.trim();
-      if (!name) return;
-      socket.emit("player_joined", { name: name });
-      document.getElementById("title").innerText = `Welcome, ${name}`;
-      document.getElementById("nameInput").style.display = "none";
-    }
+    socket.on("player_joined", (data) => {
+      document.getElementById("player").innerText = `Player: ${data.name} joined!`;
+      document.getElementById("qr").style.display = "none";
+    });
 
-    socket.on("show_question", () => {
-      timeRemaining = 100;
-      document.getElementById("buttons").style.display = "block";
+    socket.on("show_question", (data) => {
+      document.getElementById("leaderboard").style.display = "none";
+      document.getElementById("questionBox").style.display = "block";
+      document.getElementById("questionText").innerText = data.question.question;
 
-      clearInterval(countdown);
-      countdown = setInterval(() => {
-        timeRemaining--;
-        if (timeRemaining <= 0) clearInterval(countdown);
+      const choices = data.question.choices;
+      const letters = ["A", "B", "C", "D"];
+      const choicesDiv = document.getElementById("choices");
+      choicesDiv.innerHTML = "";
+
+      for (let i = 0; i < choices.length; i++) {
+        const div = document.createElement("div");
+        div.className = "choice";
+        div.innerText = `${letters[i]}) ${choices[i]}`;
+        choicesDiv.appendChild(div);
+      }
+
+      clearInterval(timerInterval);
+      scoreLeft = 100;
+      timerInterval = setInterval(() => {
+        scoreLeft--;
+        document.getElementById("timer").innerText = `Score: ${scoreLeft}`;
+        if (scoreLeft <= 0) clearInterval(timerInterval);
       }, 100);
     });
 
-    function sendAnswer(answerIndex) {
-      clearInterval(countdown);
-      socket.emit("submit_answer", {
-        answer: answerIndex,
-        score: timeRemaining
-      });
-      document.getElementById("buttons").style.display = "none";
-    }
-
-    socket.on("answer_result", (data) => {
-      if (data.correct) currentScore += data.score;
-    });
-
     socket.on("game_over", (data) => {
-      document.body.innerHTML = `
-        <h1>🎉 Final Score: ${data.score}</h1>
-        <h2>Thanks for playing!</h2>
-        <p>Returning to start...</p>
+      document.getElementById("questionBox").style.display = "none";
+
+      const lb = data.leaderboard;
+      const currentPlayer = data.player;
+      const container = document.getElementById("leaderboard");
+      container.style.display = "block";
+
+      container.innerHTML = `
+        <h2>🏁 Final Score: ${data.score}</h2>
+        <h3>Leaderboard</h3>
+        <ol>
+          ${lb.map(entry => {
+            const isCurrent = entry.name === currentPlayer && entry.score === data.score;
+            return `<li${isCurrent ? ' style="color: gold; font-weight: bold;"' : ''}>${entry.name} - ${entry.score}</li>`;
+          }).join("")}
+        </ol>
+        <p>Resetting in a few seconds...</p>
       `;
     });
 
@@ -90,4 +76,3 @@
     });
   </script>
 </body>
-</html>
