@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Phone Controller</title>
+  <title>Quiz Phone Controller</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     body {
@@ -27,17 +27,58 @@
   </style>
 </head>
 <body>
-  <h1>Select Your Answer:</h1>
-  <button onclick="sendAnswer('A')">A</button>
-  <button onclick="sendAnswer('B')">B</button>
-  <button onclick="sendAnswer('C')">C</button>
-  <button onclick="sendAnswer('D')">D</button>
+  <h1 id="title">Enter your name to start</h1>
+  <input id="nameInput" placeholder="Your name" style="font-size: 1.5rem; padding: 0.5rem;" />
+  <button onclick="startGame()">Start</button>
+
+  <div id="buttons" style="display:none;">
+    <button onclick="sendAnswer(0)">A</button>
+    <button onclick="sendAnswer(1)">B</button>
+    <button onclick="sendAnswer(2)">C</button>
+    <button onclick="sendAnswer(3)">D</button>
+  </div>
 
   <script>
     const socket = io();
-    function sendAnswer(ans) {
-      socket.emit('submit_answer', { answer: ans });
+    let currentScore = 0;
+    let countdown;
+    let timeRemaining = 100;
+
+    function startGame() {
+      const name = document.getElementById("nameInput").value.trim();
+      if (!name) return;
+      socket.emit("player_joined", { name: name });
+      document.getElementById("title").innerText = `Welcome, ${name}`;
+      document.getElementById("nameInput").style.display = "none";
     }
+
+    socket.on("show_question", (data) => {
+      timeRemaining = 100;
+      document.getElementById("buttons").style.display = "block";
+
+      countdown = setInterval(() => {
+        timeRemaining--;
+        if (timeRemaining <= 0) {
+          clearInterval(countdown);
+        }
+      }, 100);
+    });
+
+    function sendAnswer(answerIndex) {
+      clearInterval(countdown);
+      socket.emit("submit_answer", {
+        answer: answerIndex,
+        score: timeRemaining
+      });
+    }
+
+    socket.on("answer_result", (data) => {
+      if (data.correct) currentScore += data.score;
+    });
+
+    socket.on("game_over", () => {
+      document.body.innerHTML = `<h1>Game Over!</h1><p>Your final score: ${currentScore} / 1000</p>`;
+    });
   </script>
 </body>
 </html>

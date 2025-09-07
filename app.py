@@ -1,50 +1,65 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
+import random, json
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-quiz_questions = [
-    {
-        "question": "What is the capital of France?",
-        "choices": ["Paris", "Berlin", "Madrid", "Rome"],
-        "correct": 0
-    },
-    {
-        "question": "Which planet is known as the Red Planet?",
-        "choices": ["Earth", "Mars", "Venus", "Jupiter"],
-        "correct": 1
-    },
-    {
-        "question": "What is the largest mammal?",
-        "choices": ["Elephant", "Blue Whale", "Giraffe", "Hippopotamus"],
-        "correct": 1
-    }
-]
+# Load all questions from file
+with open("questions.json", "r") as f:
+    all_questions = json.load(f)
 
-current_index = 0
+game_state = {
+    "player": None,
+    "questions": [],
+    "current_index": 0
+}
 
 @app.route('/')
 def screen():
-    global current_index
-    question = quiz_questions[current_index]
-    labels = ['A', 'B', 'C', 'D']
-    return render_template('screen.html', question=question, labels=labels)
-
-@app.route('/next')
-def next_question():
-    global current_index
-    current_index = (current_index + 1) % len(quiz_questions)
-    return redirect('/')
+    return render_template('screen.html')
 
 @app.route('/phone')
 def phone():
     return render_template('phone.html')
 
+@socketio.on('player_joined')
+def handle_player_joined(data):
+    print(f"Player joined: {data['name']}")
+    game_state["player"] = data['name']
+    game_state["questions"] = random.sample(all_questions, 10)
+    game_state["current_index"] = 0
+
+    emit("player_joined", {"name": data['name']}, broadcast=True)
+    emit("show_question", {
+        "index": 0,
+        "question": game_state["questions"][0]
+    }, broadcast=True)
+
 @socketio.on('submit_answer')
-def handle_answer(data):
-    print("Answer from phone:", data)
-    emit('new_answer', data, broadcast=True)
+def handle_submit_answer(data):
+    index = game_state["current_index"]
+    correct = game_state["questions"][index]["correct"]
+    is_correct = data["answer"] == correct
+    score = data["score"] if is_correct else 0
+
+    print(f"Answer: {data['answer']} | Correct: {correct} | Score: {score}")
+
+    emit("answer_result", {
+        "correct": is_correct,
+        "correct_index": correct,
+        "score": score
+    }, broadcast=True)
+
+    if index + 1 < 10:
+        game_state["current_index"] += 1
+        next_question = game_state["questions"][game_state["current_index"]]
+        emit("show_question", {
+            "index": game_state["current_index"],
+            "question": next_question
+        }, broadcast=True)
+    else:
+        emit("game_over", {}, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=10000)
